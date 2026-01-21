@@ -6,7 +6,7 @@ import { z } from 'zod';
 export const loginSchema = z.object({
     email: z.string().email('Email không hợp lệ'),
     password: z.string().min(8, 'Mật khẩu phải có ít nhất 8 ký tự'),
-    rememberMe: z.boolean().default(false),
+    rememberMe: z.boolean().optional(),
 });
 
 export type LoginFormValues = z.infer<typeof loginSchema>;
