@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+
 import {
     LayoutDashboard,
     FileText,
@@ -11,18 +12,14 @@ import {
     Settings,
     LogOut,
     ChevronRight,
-    Search
+    Search,
+    PlayCircle,
+    Database
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/modules/auth/auth.store';
+import { useAuth } from '@/modules/auth/hooks';
 import Cookies from 'js-cookie';
-
-const menuItems = [
-    { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard' },
-    { icon: FileText, label: 'Essay Practice', href: '/essay' },
-    { icon: Mic2, label: 'Voice Practice', href: '/voice' },
-    { icon: History, label: 'History', href: '/history' },
-];
 
 const secondaryItems = [
     { icon: Settings, label: 'Settings', href: '/settings' },
@@ -32,6 +29,20 @@ export function Sidebar() {
     const pathname = usePathname();
     const router = useRouter();
     const { logout } = useAuthStore();
+    const { isAdmin } = useAuth();
+
+    const menuItems = [
+        { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard' },
+        { icon: PlayCircle, label: 'Start Practice', href: '/interview/start' },
+    ];
+
+    if (isAdmin) {
+        menuItems.push({
+            icon: Database,
+            label: 'Question Bank',
+            href: '/admin/question-bank',
+        });
+    }
 
     const handleLogout = () => {
         logout();
@@ -67,7 +78,7 @@ export function Sidebar() {
                     <p className="mb-4 px-2 text-[10px] font-bold uppercase tracking-widest text-gray-500">Main Menu</p>
                     <div className="space-y-1">
                         {menuItems.map((item) => {
-                            const isActive = pathname === item.href;
+                            const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
                             return (
                                 <Link
                                     key={item.href}

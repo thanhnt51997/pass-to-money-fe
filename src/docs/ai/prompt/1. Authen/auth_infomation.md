@@ -1,0 +1,12 @@
+API information:
+- Name: Thông Tin Người Dùng
+- Method: GET
+- URL: /api/auth/me
+- Auth required: Yes
+- Description: Lấy thông tin người dùng đang đăng nhập
+- Request body: none
+- Response:
+  - id: number
+  - name: string
+  - email: string
+  - role: string

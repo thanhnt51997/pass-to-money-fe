@@ -1,0 +1,12 @@
+API information:
+- Name: Đăng Nhập
+- Method: POST
+- URL: /api/auth/login
+- Auth required: No
+- Description: Xác thực người dùng và trả về JWT token
+- Request body:
+    - email: string
+    - password: string
+- Response:
+    - token: string
+    - user: { id, name, email, role }

@@ -1,0 +1,13 @@
+API information:
+- Name: Đăng Ký
+- Method: POST
+- URL: /api/auth/register
+- Auth required: No
+- Description: Tạo tài khoản người dùng mới
+- Request body:
+  - name: string
+  - email: string
+  - password: string
+- Response:
+  - token: string
+  - user: { id, name, email, role }
