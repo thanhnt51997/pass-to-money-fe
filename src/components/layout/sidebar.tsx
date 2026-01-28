@@ -14,7 +14,10 @@ import {
     ChevronRight,
     Search,
     PlayCircle,
-    Database
+    Database,
+    Clock,
+    User,
+    Layout
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/modules/auth/auth.store';
@@ -34,6 +37,8 @@ export function Sidebar() {
     const menuItems = [
         { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard' },
         { icon: PlayCircle, label: 'Start Practice', href: '/interview/start' },
+        { icon: Clock, label: 'History', href: '/history' },
+        { icon: User, label: 'Profile', href: '/profile' },
     ];
 
     if (isAdmin) {

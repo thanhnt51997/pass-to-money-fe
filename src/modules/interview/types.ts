@@ -73,17 +73,17 @@ export type QuestionResult = {
  * API Request/Response Types
  */
 export type StartInterviewRequest = {
-    level: Level;
-    stack: Stack;
+    template_id: string;
 };
 
 export type StartInterviewResponse = {
     success: boolean;
     data: {
-        session_id: string;
+        interview_id: string;
+        template_id: string;
         level: Level;
         stack: Stack;
-        started_at: string;
+        status: string;
     };
     message: string;
 };

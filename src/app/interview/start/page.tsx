@@ -1,172 +1,90 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Loader2, Zap } from 'lucide-react';
+import { useTemplateList } from '@/modules/interview-template/hooks';
 import { useStartInterview } from '@/modules/interview/hooks';
-import { Level, Stack } from '@/modules/interview/types';
-import { LEVELS, STACKS, LEVEL_LABELS, STACK_LABELS } from '@/modules/interview/constants';
+import TemplateSelectionCard from '@/components/interview/TemplateSelectionCard';
+import { Search, Loader2 } from 'lucide-react';
+import { TemplateStatus } from '@/modules/interview-template/types';
 
-/**
- * Start Interview Page
- * Select level and stack to begin interview
- */
 export default function StartInterviewPage() {
-    const [selectedLevel, setSelectedLevel] = useState<Level | null>(null);
-    const [selectedStack, setSelectedStack] = useState<Stack | null>(null);
-    const [error, setError] = useState<string | null>(null);
+    const [search, setSearch] = useState('');
+    // We only fetch ACTIVE templates for candidates
+    const { data, loading: fetching } = useTemplateList({
+        status: TemplateStatus.ACTIVE,
+        page: 1,
+        per_page: 50 // Fetch enough to scroll, or impl pagination later
+    });
+
     const { startInterview } = useStartInterview();
-    const [isLoading, setIsLoading] = useState(false);
+    const [startingId, setStartingId] = useState<string | null>(null);
 
-    const handleStart = async () => {
-        if (!selectedLevel || !selectedStack) return;
-
-        setIsLoading(true);
-        setError(null);
-
+    const handleStart = async (templateId: string) => {
+        setStartingId(templateId);
         try {
-            await startInterview(selectedLevel, selectedStack);
-        } catch (err: any) {
-            setError(err.response?.data?.message || 'Failed to start interview. Please try again.');
-            setIsLoading(false);
+            await startInterview(templateId);
+        } catch (error) {
+            console.error('Failed to start interview:', error);
+            // Handle error toast here if needed
+            setStartingId(null);
         }
     };
 
-    const canStart = selectedLevel && selectedStack && !isLoading;
+    const filteredTemplates = data?.items.filter(t =>
+        t.name.toLowerCase().includes(search.toLowerCase()) ||
+        t.stack.toLowerCase().includes(search.toLowerCase()) ||
+        t.level.toLowerCase().includes(search.toLowerCase())
+    ) || [];
 
     return (
-        <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#050505] font-sans selection:bg-cyan-500/30" suppressHydrationWarning>
-            {/* Dynamic Background Gradients */}
-            <div className="absolute top-[-10%] left-[-10%] h-[40%] w-[40%] rounded-full bg-purple-600/20 blur-[120px]" />
-            <div className="absolute bottom-[-10%] right-[-10%] h-[40%] w-[40%] rounded-full bg-cyan-600/20 blur-[120px]" />
-
-            {/* Grid Pattern Overlay */}
-            <div className="absolute inset-0 z-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 contrast-150" />
-            <div className="absolute inset-0 z-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:40px_40px]" />
-
-            <main className="relative z-10 w-full max-w-4xl px-6 my-12">
-                <div className="group overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] p-8 shadow-2xl backdrop-blur-xl transition-all duration-500 hover:border-white/20">
-
+        <div className="flex min-h-screen bg-[#050505]">
+            <main className="flex-1 p-8 ml-64">
+                <div className="max-w-7xl mx-auto space-y-8">
                     {/* Header */}
-                    <div className="mb-10 text-center">
-                        <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-cyan-500/10 px-4 py-2 text-cyan-400">
-                            <Zap className="h-4 w-4" />
-                            <span className="text-sm font-medium">Interview Practice</span>
+                    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                        <div>
+                            <h1 className="text-3xl font-bold bg-gradient-to-br from-white to-gray-400 bg-clip-text text-transparent">
+                                Start New Interview
+                            </h1>
+                            <p className="text-gray-400 mt-1">
+                                Choose a template below to begin your practice session.
+                            </p>
                         </div>
-                        <h1 className="mb-3 text-4xl font-bold tracking-tight text-white transition-colors group-hover:text-cyan-400">
-                            Start Your Interview
-                        </h1>
-                        <p className="text-gray-400">Select your target level and tech stack to begin</p>
+                        <div className="relative w-full md:w-96">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
+                            <input
+                                type="text"
+                                placeholder="Search by name, stack, or level..."
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-white placeholder:text-gray-600 focus:outline-none focus:border-cyan-500/50 transition-colors"
+                            />
+                        </div>
                     </div>
 
-                    {error && (
-                        <div className="mb-6 rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-center text-sm text-red-400">
-                            {error}
+                    {/* Content */}
+                    {fetching ? (
+                        <div className="flex items-center justify-center h-64">
+                            <Loader2 className="animate-spin text-cyan-500" size={32} />
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {filteredTemplates.length > 0 ? (
+                                filteredTemplates.map(template => (
+                                    <TemplateSelectionCard
+                                        key={template.id}
+                                        template={template}
+                                        onStart={handleStart}
+                                        loading={startingId === template.id}
+                                    />
+                                ))
+                            ) : (
+                                <div className="col-span-full text-center py-12 text-gray-500 bg-white/2 rounded-xl border border-dashed border-white/10">
+                                    No templates found matching your search.
+                                </div>
+                            )}
                         </div>
                     )}
-
-                    <div className="space-y-8">
-                        {/* Level Selection */}
-                        <div className="space-y-4">
-                            <label className="block text-sm font-medium text-gray-300">
-                                Select Level <span className="text-red-400">*</span>
-                            </label>
-                            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                                {Object.values(LEVELS).map((level) => (
-                                    <button
-                                        key={level}
-                                        onClick={() => setSelectedLevel(level as Level)}
-                                        className={`
-                      group/card relative overflow-hidden rounded-2xl border p-6 text-center transition-all
-                      ${selectedLevel === level
-                                                ? 'border-cyan-500 bg-cyan-500/10'
-                                                : 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10'
-                                            }
-                    `}
-                                    >
-                                        <div className="relative z-10">
-                                            <div className="mb-2 text-2xl">
-                                                {level === 'JUNIOR' && '🌱'}
-                                                {level === 'MIDDLE' && '🌿'}
-                                                {level === 'SENIOR' && '🌳'}
-                                                {level === 'LEAD' && '🏆'}
-                                            </div>
-                                            <div className={`font-medium ${selectedLevel === level ? 'text-white' : 'text-gray-300'}`}>
-                                                {LEVEL_LABELS[level]}
-                                            </div>
-                                        </div>
-                                        <div className="absolute inset-x-0 -bottom-px mx-auto h-px w-1/2 bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent opacity-0 transition-opacity group-hover/card:opacity-100" />
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Stack Selection */}
-                        <div className="space-y-4">
-                            <label className="block text-sm font-medium text-gray-300">
-                                Select Tech Stack <span className="text-red-400">*</span>
-                            </label>
-                            <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
-                                {Object.values(STACKS).map((stack) => (
-                                    <button
-                                        key={stack}
-                                        onClick={() => setSelectedStack(stack as Stack)}
-                                        className={`
-                      group/card relative overflow-hidden rounded-2xl border p-6 text-center transition-all
-                      ${selectedStack === stack
-                                                ? 'border-purple-500 bg-purple-500/10'
-                                                : 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10'
-                                            }
-                    `}
-                                    >
-                                        <div className="relative z-10">
-                                            <div className="mb-2 text-2xl">
-                                                {stack === 'FRONTEND' && '🎨'}
-                                                {stack === 'BACKEND' && '⚙️'}
-                                                {stack === 'FULLSTACK' && '🚀'}
-                                                {stack === 'DEVOPS' && '☁️'}
-                                                {stack === 'MOBILE' && '📱'}
-                                            </div>
-                                            <div className={`font-medium ${selectedStack === stack ? 'text-white' : 'text-gray-300'}`}>
-                                                {STACK_LABELS[stack]}
-                                            </div>
-                                        </div>
-                                        <div className="absolute inset-x-0 -bottom-px mx-auto h-px w-1/2 bg-gradient-to-r from-transparent via-purple-500/50 to-transparent opacity-0 transition-opacity group-hover/card:opacity-100" />
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Start Button */}
-                        <button
-                            onClick={handleStart}
-                            disabled={!canStart}
-                            className={`
-                relative w-full overflow-hidden rounded-2xl py-4 font-bold transition-all
-                ${canStart
-                                    ? 'bg-gradient-to-r from-cyan-500 to-purple-500 text-white hover:from-cyan-400 hover:to-purple-400 active:scale-[0.98]'
-                                    : 'cursor-not-allowed bg-white/5 text-gray-600'
-                                }
-              `}
-                        >
-                            <span className="relative z-10 flex items-center justify-center gap-2">
-                                {isLoading ? (
-                                    <>
-                                        <Loader2 className="h-5 w-5 animate-spin" />
-                                        Starting Interview...
-                                    </>
-                                ) : (
-                                    <>
-                                        <Zap className="h-5 w-5" />
-                                        Start Interview
-                                    </>
-                                )}
-                            </span>
-                            {canStart && !isLoading && (
-                                <div className="absolute inset-x-0 -bottom-px mx-auto h-px w-1/2 bg-gradient-to-r from-transparent via-white/50 to-transparent" />
-                            )}
-                        </button>
-                    </div>
                 </div>
             </main>
         </div>

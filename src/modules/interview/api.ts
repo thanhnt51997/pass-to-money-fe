@@ -14,7 +14,7 @@ import {
 /**
  * Interview API
  * Business Rules:
- * - Start interview session with level + stack
+ * - Start interview session with Template ID
  * - Load questions for session
  * - Submit answers (MCQ / Essay / Voice)
  * - Submit interview when complete
@@ -25,12 +25,12 @@ export const interviewApi = {
     /**
      * Start Interview Session
      * Business Rules:
-     * - Create new session with level + stack
+     * - Create new session from Template ID
      * - Questions are snapshotted at creation time
      */
     startInterview: async (data: StartInterviewRequest): Promise<StartInterviewResponse> => {
         const response = await http.post<StartInterviewResponse>(
-            API_ENDPOINTS.START_INTERVIEW,
+            '/api/interviews',
             data
         );
         return response.data;

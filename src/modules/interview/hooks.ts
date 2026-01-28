@@ -20,26 +20,31 @@ export const useStartInterview = () => {
     const { setSession, setLoading, resetInterview } = useInterviewStore();
 
     const startInterview = useCallback(
-        async (level: Level, stack: Stack) => {
+        async (templateId: string) => {
             setLoading(true);
             resetInterview();
 
             try {
-                const response = await interviewApi.startInterview({ level, stack });
+                const response = await interviewApi.startInterview({ template_id: templateId });
 
                 setSession({
-                    id: response.data.session_id,
+                    id: response.data.interview_id,
                     level: response.data.level,
                     stack: response.data.stack,
-                    status: 'IN_PROGRESS',
-                    started_at: response.data.started_at,
+                    status: 'IN_PROGRESS', // API returns 'created', but UI considers it strictly 'IN_PROGRESS' once started?
+                    // Actually API says status: 'created'. Let's map it or keep it.
+                    // Store expects 'IN_PROGRESS' | 'SUBMITTED' | 'EVALUATED'.
+                    // 'created' allows 'IN_PROGRESS' logic on frontend (answering questions).
+                    started_at: new Date().toISOString(), // API doesn't return started_at in new contract?
+                    // New response: { interview_id, template_id, level, stack, status }
+                    // We can use current time as started_at for local store purpose
                     submitted_at: null,
                     total_questions: 0,
                     answered_questions: 0,
                 });
 
-                // Navigate to questions page
-                router.push(`/interview/${response.data.session_id}/question`);
+                // Navigate to room page
+                router.push(`/interview/${response.data.interview_id}/room`);
 
                 return response;
             } catch (error) {
@@ -179,17 +184,38 @@ export const useSubmitInterview = () => {
  * - Retrieve evaluation results
  * - Poll if evaluation is pending
  */
-export const useInterviewResult = () => {
-    const getResult = useCallback(async (sessionId: string) => {
-        try {
-            const response = await interviewApi.getResult(sessionId);
-            return response.data;
-        } catch (error) {
-            throw error;
-        }
-    }, []);
+/**
+ * Get Interview Result Hook
+ * Business Rules:
+ * - Retrieve evaluation results
+ * - Poll if evaluation is pending
+ */
+import useSWR from 'swr';
 
-    return { getResult };
+export const useInterviewResult = (sessionId: string) => {
+    // Poll every 3 seconds if we don't have a result or status is not finished
+    // But API getResult returns the result. If logic is in backend, it might return 404 or partial data if not done?
+    // Let's assume it returns { status: 'PENDING' } or similar if not ready, or we check a specific status field.
+    // Based on `types.ts`, `InterviewResult` doesn't strictly have a status, but `InterviewSession` does.
+    // Usually fetching result implies we want the *Result* object.
+
+    // For now, let's just fetch. The Page will decide to poll or not.
+    // Actually, SWR is great here.
+    const { data, error, isLoading, mutate } = useSWR(
+        sessionId ? `/api/interviews/${sessionId}/result` : null, // Cache key
+        () => interviewApi.getResult(sessionId).then(res => res.data),
+        {
+            refreshInterval: (data) => {
+                // If data exists but maybe incomplete? Or if we want to support "processing" UI?
+                // If the *page* sees "PENDING" score, it might keep polling.
+                // Let's rely on the Page to trigger revalidation or just set fixed interval if needed.
+                return 0; // Disable auto poll by default, let UI control or just fetch once.
+            },
+            revalidateOnFocus: false
+        }
+    );
+
+    return { result: data, loading: isLoading, error, mutate };
 };
 
 /**
