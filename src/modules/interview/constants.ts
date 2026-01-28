@@ -30,11 +30,12 @@ export const STACKS = {
 } as const;
 
 export const API_ENDPOINTS = {
-    START_INTERVIEW: '/api/interview/start',
-    GET_QUESTIONS: '/api/interview/:sessionId/questions',
-    SUBMIT_ANSWER: '/api/interview/:sessionId/answer',
-    SUBMIT_INTERVIEW: '/api/interview/:sessionId/submit',
-    GET_RESULT: '/api/interview/:sessionId/result',
+    START_INTERVIEW: '/api/interviews/start',
+    GET_INTERVIEWS: '/api/interviews',
+    GET_QUESTIONS: '/api/interviews/:sessionId/questions',
+    SUBMIT_ANSWER: '/api/interviews/:sessionId/answers',
+    SUBMIT_INTERVIEW: '/api/interviews/:sessionId/submit',
+    GET_RESULT: '/api/interviews/:sessionId/result',
 } as const;
 
 export const LEVEL_LABELS: Record<string, string> = {

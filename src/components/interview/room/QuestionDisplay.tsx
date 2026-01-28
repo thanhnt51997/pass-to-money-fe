@@ -82,9 +82,10 @@ export default function QuestionDisplay({ question, answer, onAnswerChange }: Qu
                 <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-cyan-950/50 text-cyan-400 border border-cyan-900/50">
                     {question.type}
                 </span>
-                <h2 className="text-2xl font-semibold text-white leading-relaxed">
-                    {question.question_text}
-                </h2>
+                <h2
+                    className="text-2xl font-semibold text-white leading-relaxed"
+                    dangerouslySetInnerHTML={{ __html: question.question_text }}
+                />
             </div>
 
             {question.type === 'MCQ' && renderMCQ()}

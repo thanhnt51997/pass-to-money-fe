@@ -60,7 +60,7 @@ export default function QuestionNavigation({ questions, currentIndex, onSelect, 
                             </div>
                             <div className="flex-1 text-left min-w-0">
                                 <p className={`text-sm truncate ${isActive ? 'text-white font-medium' : 'text-gray-400'}`}>
-                                    {q.question_text || 'Untitled Question'}
+                                    {q.question_text.replace(/<[^>]*>/g, '') || 'Untitled Question'}
                                 </p>
                                 <div className="flex gap-2 mt-1">
                                     <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/5 text-gray-500 uppercase">

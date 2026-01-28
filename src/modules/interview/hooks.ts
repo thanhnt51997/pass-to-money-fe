@@ -73,25 +73,32 @@ export const useLoadQuestions = () => {
             setLoading(true);
 
             try {
-                const response = await interviewApi.getQuestions(sessionId);
+                // Return both result to allow handling
+                const [questionsRes, sessionRes] = await Promise.all([
+                    interviewApi.getQuestions(sessionId),
+                    interviewApi.getSession(sessionId),
+                ]);
 
-                setQuestions(response.data.questions);
+                setQuestions(questionsRes.data.questions);
 
-                if (currentSession) {
-                    setSession({
-                        ...currentSession,
-                        total_questions: response.data.questions.length,
-                    });
+                // Check if sessionRes has data
+                if (sessionRes.data) {
+                    setSession(sessionRes.data);
                 }
 
-                return response;
+                // If we had a currentSession logic before, we can keep it as backup or merge?
+                // But fresh fetch is source of truth.
+
+                // We return questionsRes to keep backward compatibility with component expectation
+                return questionsRes;
             } catch (error) {
+                console.error('Error loading interview data:', error);
                 throw error;
             } finally {
                 setLoading(false);
             }
         },
-        [setQuestions, setLoading, setSession, currentSession]
+        [setQuestions, setLoading, setSession]
     );
 
     return { loadQuestions };
@@ -142,7 +149,7 @@ export const useSubmitAnswer = () => {
  * Business Rules:
  * - Finalize interview
  * - All required questions must be answered
- * - Navigate to result page
+ * - Navigate to result pagef
  */
 export const useSubmitInterview = () => {
     const router = useRouter();

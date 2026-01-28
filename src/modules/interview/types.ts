@@ -88,6 +88,13 @@ export type StartInterviewResponse = {
     message: string;
 };
 
+export type GetSessionResponse = {
+    success: boolean;
+    data: InterviewSession;
+    message: string;
+};
+
+
 export type GetQuestionsResponse = {
     success: boolean;
     data: {

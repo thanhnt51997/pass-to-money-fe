@@ -9,6 +9,7 @@ import {
     SubmitInterviewRequest,
     SubmitInterviewResponse,
     GetResultResponse,
+    GetSessionResponse,
 } from './types';
 
 /**
@@ -37,6 +38,35 @@ export const interviewApi = {
     },
 
     /**
+     * Get Interview Session
+     * Business Rules:
+     * - Retrieve session details
+     * - Workaround: Fetch list and filter by ID since direct endpoint is missing
+     */
+    getSession: async (sessionId: string): Promise<GetSessionResponse> => {
+        // Fetch recent sessions (adjust per_page as needed)
+        const response = await http.get(API_ENDPOINTS.GET_INTERVIEWS, {
+            params: { per_page: 50 }
+        });
+
+        const session = response.data.data.items.find((s: any) => String(s.id) === String(sessionId));
+
+        if (!session) {
+            throw new Error(`Session ${sessionId} not found in recent interviews`);
+        }
+
+        return {
+            success: true,
+            data: {
+                ...session,
+                id: String(session.id)
+            },
+            message: 'Session retrieved successfully'
+        };
+    },
+
+
+    /**
      * Get Interview Questions
      * Business Rules:
      * - Load all questions for active session
@@ -44,8 +74,25 @@ export const interviewApi = {
      */
     getQuestions: async (sessionId: string): Promise<GetQuestionsResponse> => {
         const url = API_ENDPOINTS.GET_QUESTIONS.replace(':sessionId', sessionId);
-        const response = await http.get<GetQuestionsResponse>(url);
-        return response.data;
+        const response = await http.get(url);
+
+        // Map backend response matching docs to frontend domain
+        const questions = response.data.data.questions.map((q: any) => ({
+            id: String(q.question_id),
+            question_text: q.content,
+            type: q.type === 'choice' ? 'MCQ' : (q.type === 'theoretical' ? 'ESSAY' : 'VOICE'),
+            options: q.options,
+            order: q.order,
+            is_required: true // Default to true as docs mentions mandatory logic but not field?
+        }));
+
+        return {
+            ...response.data,
+            data: {
+                ...response.data.data,
+                questions
+            }
+        };
     },
 
     /**
@@ -59,7 +106,7 @@ export const interviewApi = {
         const url = API_ENDPOINTS.SUBMIT_ANSWER.replace(':sessionId', data.session_id);
         const response = await http.post<SubmitAnswerResponse>(url, {
             question_id: data.question_id,
-            answer_text: data.answer_text,
+            answer_content: data.answer_text,
             selected_option: data.selected_option,
             voice_file_url: data.voice_file_url,
         });

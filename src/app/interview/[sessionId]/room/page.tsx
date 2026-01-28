@@ -94,11 +94,25 @@ export default function InterviewRoomPage() {
         }
     };
 
-    if (isLoading || !currentSession || questions.length === 0) {
+    if (isLoading || !currentSession) {
         return (
             <div className="flex h-screen items-center justify-center bg-[#050505] text-white">
                 <Loader2 className="animate-spin mr-2 text-cyan-500" />
                 Loading your interview...
+            </div>
+        );
+    }
+
+    if (questions.length === 0) {
+        return (
+            <div className="flex h-screen items-center justify-center bg-[#050505] text-white flex-col gap-4">
+                <div className="text-xl">No questions found for this session.</div>
+                <button
+                    onClick={() => router.push('/interview')}
+                    className="px-4 py-2 bg-white/10 rounded-lg hover:bg-white/20 transition-colors"
+                >
+                    Back to Interviews
+                </button>
             </div>
         );
     }
