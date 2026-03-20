@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 import {
     Clock,
@@ -5,26 +7,58 @@ import {
     Target,
     Zap,
     BookOpen,
-    Play
+    Play,
+    TrendingUp,
 } from 'lucide-react';
+import { useProfileAnalytics } from '@/modules/user/hooks';
+import { format } from 'date-fns';
 
 /**
  * UC-20: User Dashboard Overview
  * Business Rules:
- * - Display summary stats for user performance
+ * - Display real summary stats from /profile/analytics
+ * - Show score trend history
  * - Show recent activities and quick access to practice
  */
 export default function DashboardPage() {
+    const { data: analytics, loading } = useProfileAnalytics();
+
+    const stats = [
+        {
+            label: 'Total Practices',
+            value: loading ? '--' : String(analytics?.total_interviews ?? 0),
+            icon: Target,
+            color: 'cyan',
+        },
+        {
+            label: 'Avg. Score',
+            value: loading ? '--' : `${((analytics?.avg_score ?? 0) * 10).toFixed(0)}%`,
+            icon: Zap,
+            color: 'purple',
+        },
+        {
+            label: 'Time Spent',
+            value: '—',
+            icon: Clock,
+            color: 'blue',
+        },
+        {
+            label: 'Level Ready',
+            value: loading
+                ? '--'
+                : analytics?.level_readiness.is_ready
+                ? 'Yes'
+                : 'In Progress',
+            icon: ArrowUpRight,
+            color: 'emerald',
+        },
+    ];
+
     return (
         <div className="space-y-10">
             {/* Stats Overview */}
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-                {[
-                    { label: 'Total Practices', value: '24', icon: Target, color: 'cyan' },
-                    { label: 'Avg. Score', value: '85%', icon: Zap, color: 'purple' },
-                    { label: 'Time Spent', value: '12h', icon: Clock, color: 'blue' },
-                    { label: 'Success Rate', value: '92%', icon: ArrowUpRight, color: 'emerald' },
-                ].map((stat, i) => (
+                {stats.map((stat, i) => (
                     <div
                         key={i}
                         className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] p-6 transition-all hover:border-white/20 hover:bg-white/[0.05]"
@@ -38,7 +72,6 @@ export default function DashboardPage() {
                                 <stat.icon size={24} />
                             </div>
                         </div>
-                        {/* Progress line */}
                         <div className="mt-4 h-1 w-full overflow-hidden rounded-full bg-white/5">
                             <div
                                 className={`h-full bg-${stat.color}-500/50 transition-all duration-1000`}
@@ -66,12 +99,33 @@ export default function DashboardPage() {
                                 </button>
                             </div>
                         </div>
-                        {/* Decorative element */}
                         <div className="absolute -bottom-12 -right-12 h-64 w-64 rounded-full bg-cyan-500/10 blur-[60px]" />
                         <div className="absolute -top-12 -left-12 h-64 w-64 rounded-full bg-purple-500/10 blur-[60px]" />
                     </div>
 
-                    {/* Recent sessions */}
+                    {/* Score Trend */}
+                    {!loading && analytics && analytics.score_trend.length > 0 && (
+                        <div>
+                            <div className="mb-4 flex items-center gap-2">
+                                <TrendingUp size={20} className="text-cyan-400" />
+                                <h3 className="text-xl font-bold text-white">Score Trend</h3>
+                            </div>
+                            <div className="rounded-2xl border border-white/5 bg-white/[0.02] divide-y divide-white/5">
+                                {analytics.score_trend.map((entry, i) => (
+                                    <div key={i} className="flex items-center justify-between px-5 py-3">
+                                        <span className="text-sm text-gray-400">
+                                            {format(new Date(entry.date), 'MMM d, yyyy')}
+                                        </span>
+                                        <span className={`text-sm font-bold ${entry.score >= 8 ? 'text-green-400' : entry.score >= 5 ? 'text-yellow-400' : 'text-red-400'}`}>
+                                            {entry.score.toFixed(1)} / 10
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Recent sessions placeholder */}
                     <div>
                         <div className="mb-6 flex items-center justify-between">
                             <h3 className="text-xl font-bold text-white">Recent Sessions</h3>
@@ -99,7 +153,7 @@ export default function DashboardPage() {
                     </div>
                 </div>
 
-                {/* Sidebar Info/Badges */}
+                {/* Sidebar */}
                 <div className="space-y-8">
                     <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-6">
                         <h3 className="mb-4 text-lg font-bold text-white">Skills Progress</h3>

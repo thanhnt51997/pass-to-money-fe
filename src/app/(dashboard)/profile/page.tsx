@@ -4,9 +4,10 @@ import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useProfile } from '@/modules/user/hooks';
+import { useProfile, useSkillBreakdown } from '@/modules/user/hooks';
 import { useAuth } from '@/modules/auth/hooks';
 import { Loader2, Save, User as UserIcon } from 'lucide-react';
+import { format } from 'date-fns';
 
 const profileSchema = z.object({
     name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -21,13 +22,13 @@ type ProfileFormValues = z.infer<typeof profileSchema>;
 
 export default function ProfilePage() {
     const { user } = useAuth();
-    const { profile, loading, updateProfile } = useProfile();
+    const { profile, loading, updateGoal, updateUserInfo } = useProfile();
+    const { data: skills, loading: skillsLoading } = useSkillBreakdown();
 
     const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<ProfileFormValues>({
         resolver: zodResolver(profileSchema)
     });
 
-    // Populate form when profile data loads
     useEffect(() => {
         if (profile) {
             reset({
@@ -41,12 +42,20 @@ export default function ProfilePage() {
         }
     }, [profile, reset]);
 
-    const onSubmit = async (data: ProfileFormValues) => {
+    const onSubmit = async (values: ProfileFormValues) => {
         try {
-            await updateProfile({
-                ...data,
-                // Ensure empty strings are handled if needed, z.literal('') handles it
-            });
+            await Promise.all([
+                updateGoal({
+                    target_level: values.target_level,
+                    preferred_stack: values.preferred_stack,
+                }),
+                updateUserInfo({
+                    name: values.name,
+                    bio: values.bio,
+                    linkedin_url: values.linkedin_url,
+                    github_url: values.github_url,
+                }),
+            ]);
             alert('Profile updated successfully!');
         } catch (error) {
             console.error('Failed to update profile:', error);
@@ -169,6 +178,47 @@ export default function ProfilePage() {
                         </button>
                     </div>
                 </form>
+            </div>
+
+            {/* Skill Breakdown — read-only */}
+            <div className="bg-[#09090b] border border-white/10 rounded-2xl p-8">
+                <h2 className="text-xl font-bold text-white mb-6">Skill Breakdown</h2>
+                {skillsLoading ? (
+                    <div className="flex justify-center py-8">
+                        <Loader2 className="animate-spin text-cyan-500" size={24} />
+                    </div>
+                ) : skills.length === 0 ? (
+                    <p className="text-center text-gray-500 py-8">No skill data yet. Complete some interviews to see your breakdown.</p>
+                ) : (
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left">
+                            <thead className="border-b border-white/10 text-xs uppercase tracking-wider text-gray-500">
+                                <tr>
+                                    <th className="pb-3 pr-6 font-medium">Stack</th>
+                                    <th className="pb-3 pr-6 font-medium">Sessions</th>
+                                    <th className="pb-3 pr-6 font-medium">Avg Score</th>
+                                    <th className="pb-3 font-medium">Last Practice</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-white/5">
+                                {skills.map((s) => (
+                                    <tr key={s.stack} className="text-sm">
+                                        <td className="py-3 pr-6 font-medium text-white">{s.stack}</td>
+                                        <td className="py-3 pr-6 text-gray-400">{s.interview_count}</td>
+                                        <td className="py-3 pr-6">
+                                            <span className={`font-bold ${s.avg_score >= 8 ? 'text-green-400' : s.avg_score >= 5 ? 'text-yellow-400' : 'text-red-400'}`}>
+                                                {s.avg_score.toFixed(1)}
+                                            </span>
+                                        </td>
+                                        <td className="py-3 text-gray-400">
+                                            {format(new Date(s.last_interview_at), 'MMM d, yyyy')}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
             </div>
         </div>
     );
