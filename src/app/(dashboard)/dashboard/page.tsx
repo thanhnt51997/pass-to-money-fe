@@ -9,8 +9,10 @@ import {
     BookOpen,
     Play,
     TrendingUp,
+    Brain,
 } from 'lucide-react';
 import { useProfileAnalytics } from '@/modules/user/hooks';
+import { useAIReadiness } from '@/modules/ai-recommendation/hooks';
 import { format } from 'date-fns';
 
 /**
@@ -22,6 +24,7 @@ import { format } from 'date-fns';
  */
 export default function DashboardPage() {
     const { data: analytics, loading } = useProfileAnalytics();
+    const { readiness, loading: readinessLoading, notAvailable } = useAIReadiness();
 
     const stats = [
         {
@@ -51,6 +54,12 @@ export default function DashboardPage() {
                 : 'In Progress',
             icon: ArrowUpRight,
             color: 'emerald',
+        },
+        {
+            label: 'AI Readiness',
+            value: readinessLoading ? '--' : notAvailable ? 'N/A' : `${readiness?.score ?? 0}%`,
+            icon: Brain,
+            color: 'violet',
         },
     ];
 

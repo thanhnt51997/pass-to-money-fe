@@ -17,7 +17,8 @@ import {
     Database,
     Clock,
     User,
-    Layout
+    Layout,
+    Brain,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/modules/auth/auth.store';
@@ -38,6 +39,7 @@ export function Sidebar() {
         { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard' },
         { icon: PlayCircle, label: 'Start Practice', href: '/interview/start' },
         { icon: Clock, label: 'History', href: '/history' },
+        { icon: Brain, label: 'AI Recommendations', href: '/recommendations' },
         { icon: User, label: 'Profile', href: '/profile' },
     ];
 
